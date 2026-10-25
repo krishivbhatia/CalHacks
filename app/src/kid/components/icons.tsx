@@ -31,3 +31,12 @@ export const Cross = ({ size = 20 }: P) => (
 export const Undo = ({ size = 20 }: P) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...base}><path d="m9 14-5-5 5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></svg>
 );
+export const Sun = ({ size = 20 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...base}><circle cx="12" cy="12" r="4" /><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4" /></svg>
+);
+export const Moon = ({ size = 20 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...base}><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z" /></svg>
+);
+export const Checks = ({ size = 14 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...base} strokeWidth={2.4}><path d="m2.5 12.5 4.5 4.5L15 8" /><path d="m11 15.5 1.5 1.5L21 8" /></svg>
+);

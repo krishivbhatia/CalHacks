@@ -33,7 +33,7 @@ type Props = {
 }
 
 const MAIN = 'core'
-const MINE = { id: 'mine', name: 'My words', short: 'My words', color: '#e879f9', icon: '/symbols/heart.png' }
+const MINE = { id: 'mine', name: 'My words', short: 'My words', color: '#e879f9', icon: '/symbols/love.png' }
 
 function Tile({
   word,
@@ -57,7 +57,7 @@ function Tile({
       whileTap={{ scale: 0.94 }}
       transition={{ type: 'spring', stiffness: 520, damping: 30 }}
     >
-      <Pictogram src={word.image} size={compact ? 32 : 46} />
+      <Pictogram src={word.image} size={compact ? 30 : 48} />
       <span className="tile-label">{word.label}</span>
       {count > 0 && <span className="tile-badge">{count}</span>}
     </motion.button>
@@ -119,11 +119,11 @@ export default function Board({
     <section className="panel board" aria-label="Communication board">
       <header className="board-head">
         <span className="logo" aria-hidden>
-          T
+          t.
         </span>
         <div className="board-title">
           <h1>TapTalk</h1>
-          <span>Tap pictures to talk to {friend?.name ?? 'your friend'}</span>
+          <span>Talking with {friend?.name ?? 'your friend'}</span>
         </div>
         <Avatar name={me.name} color={me.color} size={32} />
       </header>
@@ -135,42 +135,44 @@ export default function Board({
         ))}
       </div>
 
-      <nav className="cats" role="tablist" aria-label="Word categories">
-        {categories.map((c) => (
-          <button
-            key={c.id}
-            role="tab"
-            aria-selected={c.id === categoryId}
-            className={`cat ${c.id === categoryId ? 'on' : ''}`}
-            style={{ ['--cat' as string]: c.color }}
-            onClick={() => openCategory(c.id)}
-          >
-            <img src={c.icon} width={22} height={22} alt="" draggable={false} />
-            <span>{c.short}</span>
-          </button>
-        ))}
-      </nav>
-
-      <div
-        className="grid-wrap"
-        ref={gridRef}
-        role="tabpanel"
-        aria-label={category.name}
-        style={{ ['--cat' as string]: category.color }}
-      >
-        <div className="grid-head">
-          {categoryId !== MAIN && (
-            <button className="back-main" onClick={() => openCategory(MAIN)}>
-              <Back size={16} /> Main words
+      <div className="browser">
+        <nav className="rail" role="tablist" aria-orientation="vertical" aria-label="Word categories">
+          {categories.map((c) => (
+            <button
+              key={c.id}
+              role="tab"
+              aria-selected={c.id === categoryId}
+              className="rail-item"
+              style={{ ['--cat' as string]: c.color }}
+              onClick={() => openCategory(c.id)}
+            >
+              <Pictogram src={c.icon} size={32} />
+              <span>{c.short}</span>
             </button>
-          )}
-          <h2>{category.name}</h2>
-          <span>{words.length} words</span>
-        </div>
-        <div className="tiles">
-          {words.map((w) => (
-            <Tile key={w.id} {...tileProps(w)} />
           ))}
+        </nav>
+
+        <div
+          className="grid-wrap"
+          ref={gridRef}
+          role="tabpanel"
+          aria-label={category.name}
+          style={{ ['--cat' as string]: category.color }}
+        >
+          <div className="grid-head">
+            {categoryId !== MAIN && (
+              <button className="back-main" onClick={() => openCategory(MAIN)}>
+                <Back size={16} /> Main words
+              </button>
+            )}
+            <h2>{category.name}</h2>
+            <span>{words.length} words</span>
+          </div>
+          <div className="tiles">
+            {words.map((w) => (
+              <Tile key={w.id} {...tileProps(w)} />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -243,7 +245,7 @@ export default function Board({
           ) : (
             <motion.div key="builder" className="builder" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
               <div className="strip" aria-label="Your message" aria-live="polite">
-                {strip.length === 0 && <span className="strip-empty">Tap pictures to build a message…</span>}
+                {strip.length === 0 && <span className="strip-empty">Tap pictures to talk…</span>}
                 <AnimatePresence initial={false}>
                   {strip.map((w, i) => (
                     <motion.button
