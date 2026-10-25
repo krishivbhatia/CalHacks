@@ -1,3 +1,4 @@
+import { paginationOptsValidator } from "convex/server";
 import { rateLimiter } from "./rateLimit";
 import { resolveSymbols } from "./symbols";
 
@@ -19,8 +20,9 @@ export const listByRoom = query({
     const msgs = await ctx.db
       .query("messages")
       .withIndex("by_room", (q) => q.eq("roomId", roomId))
-      .order("asc")
-      .collect();
+      .order("desc")
+      .take(100);
+    msgs.reverse();
     return await Promise.all(
       msgs.map(async (m) => ({
         ...m,
@@ -256,5 +258,14 @@ export const speechFailed = internalMutation({
     if (m?.status === "confirmed" && m.moderationNote === `speaking:${token}`) {
       await ctx.db.patch(messageId, { moderationNote: "Audio unavailable. Retry moderation to try again." });
     }
+  },
+});
+
+// Historical monitor pages; latest live child transcript stays bounded at 100.
+export const historyByRoom = query({
+  args: { roomId: v.id("rooms"), paginationOpts: paginationOptsValidator },
+  handler: async (ctx, { roomId, paginationOpts }) => {
+    const result = await ctx.db.query("messages").withIndex("by_room", q => q.eq("roomId", roomId)).order("desc").paginate(paginationOpts);
+    return { ...result, page: await Promise.all(result.page.map(async m => ({ ...m, audioUrl: m.audioStorageId ? await ctx.storage.getUrl(m.audioStorageId) : null }))) };
   },
 });

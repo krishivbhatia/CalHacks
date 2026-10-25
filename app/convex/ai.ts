@@ -1,3 +1,4 @@
+import { expansionPrompt, moderationPrompt, matchingPrompt } from "./prompts";
 import { internalAction, action, env } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
@@ -28,7 +29,7 @@ export const expandSymbols = internalAction({
     if (!context || context.message.status !== "drafting") return;
     try {
       const result = await claudeTool({ model: fastModel(), name: "draft_sentence",
-        system: "Translate AAC symbols for a child aged 8–12 into ONE literal, first-person, present-tense sentence, at most 12 words. Preserve negation, explicit requests, and turn-taking. When symbols contain only objects and attributes, use I see; never infer a request. Use I want ONLY if an explicit request symbol is present. Example: red + train -> I see a red train. Never invent feelings, names, motives, or facts. Use prior conversation only to resolve references, never add meaning. For ambiguity choose the least assumptive literal reading. Do not claim to know the child's intent. Symbols can also be pronouns, verbs, feelings, people, places and question words: keep the child's words in order and make one short, grammatical sentence or question from them, adding no new facts (for example where + is + mom -> Where is mom?; I + want + water -> I want water.).",
+        system: expansionPrompt,
         data: { symbols: context.message.symbols, age: context.child.age,
           communicationStyle: context.child.communicationStyle, recent: context.recent },
         schema: { type: "object", properties: { text: { type: "string" } }, required: ["text"], additionalProperties: false },
@@ -50,7 +51,7 @@ export const moderate = internalAction({
     if (!m || m.status !== "confirmed" || !m.finalText) return;
     try {
       const result = await claudeTool({ model: fastModel(), name: "safety_result",
-        system: "Check a child-confirmed message for a synthetic, parent-mediated AAC friendship demo for ages 8–12. Flag threats, bullying, sexual content, dangerous instructions, self-harm content, requests for private contact or identifying details. Allow ordinary refusal, negative feelings, sensory needs, and asking for help; do not suppress these. Return pass or flag and a brief parent-readable reason. This is a limited safeguard, not a guarantee.",
+        system: moderationPrompt,
         data: { text: m.finalText },
         schema: { type: "object", properties: { decision: { type: "string", enum: ["pass", "flag"] }, reason: { type: "string" } }, required: ["decision", "reason"], additionalProperties: false },
       });
@@ -73,7 +74,7 @@ export const proposeMatches = internalAction({
     const children = await ctx.runQuery(internal.matches.candidates, {});
     if (children.length < 2) return 0;
     const result = await claudeTool({ model: matchModel(), name: "rank_matches", maxTokens: 2500,
-      system: "Rank compatible pairs from these synthetic child profiles. Weight communication compatibility and sensory fit above shared interests. Return up to 6 distinct pairs, scores 0–1, one parent-readable sentence of reason and one watch-out each. Never diagnose, infer protected traits, or invent profile facts. Use only supplied IDs. Parents must approve every proposed match.",
+      system: matchingPrompt,
       data: children,
       schema: { type: "object", properties: { matches: { type: "array", maxItems: 6, items: {
         type: "object", properties: { childAId: { type: "string" }, childBId: { type: "string" }, score: { type: "number", minimum: 0, maximum: 1 }, reason: { type: "string" }, watchOuts: { type: "string" } },

@@ -101,7 +101,7 @@ describe("sending symbols outside the original 12", () => {
       });
       vi.advanceTimersByTime(60_000);
     }
-    const all = await t.query(api.messages.listByRoom, { roomId });
+    const all = await t.run(ctx => ctx.db.query("messages").withIndex("by_room", q => q.eq("roomId", roomId)).collect());
     expect(all.map(m => m.symbols[0])).toEqual(VOCABULARY.map(w => w.label));
   });
   it("stores one canonical spelling whether the client sends a label or an id", async () => {

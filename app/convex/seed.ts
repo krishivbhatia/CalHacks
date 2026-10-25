@@ -43,17 +43,17 @@ export const reset = internalMutation({
       "Uses a symbol tablet plus a few spoken words",
       "Dislikes bright flashing lights",
       "Aiden is fascinated by dinosaurs and space. He uses symbols and a few words.",
-      "VOICE_ID_AIDEN");
+      "630ed21c-2c5c-41cf-9d82-10a7fd668370");
     const priya = await mk("Priya", 8, ["animals", "music"],
       "Uses a symbol tablet; likes playing alongside someone",
       "Enjoys soft music, dislikes sudden sounds",
       "Priya loves animals and music. She likes gentle, parallel play.",
-      "VOICE_ID_PRIYA");
+      "2a12b36c-7f9b-4c3a-9f7a-72731b15323a");
     const sam = await mk("Sam", 12, ["dinosaurs", "lego"],
       "Uses a symbol tablet; likes short back-and-forth",
       "No major sensitivities",
       "Sam loves dinosaurs and Lego. He enjoys quick, simple exchanges.",
-      "VOICE_ID_SAM");
+      "47c38ca4-5f35-497b-b1a3-415245fb35e1");
 
     for (const [childId, displayName] of [
       [maya, "Maya's parent"], [leo, "Leo's parent"],

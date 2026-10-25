@@ -1,0 +1,117 @@
+{
+  "at": "2026-10-25T09:08:47.345Z",
+  "claudeRequests": 3,
+  "limitations": "Three repetitions of one four-profile synthetic fixture with order reversal. Structural validity and ranking observations only; no calibrated quality or real friendship outcome metric.",
+  "profiles": [
+    {
+      "_id": "quiet-a",
+      "age": 9,
+      "communicationStyle": "Slow, one symbol turn at a time",
+      "interests": [
+        "trains"
+      ],
+      "sensoryNotes": "Quiet space, no sudden sounds"
+    },
+    {
+      "_id": "quiet-b",
+      "age": 10,
+      "communicationStyle": "Slow, one symbol turn at a time",
+      "interests": [
+        "drawing"
+      ],
+      "sensoryNotes": "Quiet space, no sudden sounds"
+    },
+    {
+      "_id": "active-a",
+      "age": 9,
+      "communicationStyle": "Rapid conversation, active games",
+      "interests": [
+        "trains"
+      ],
+      "sensoryNotes": "Enjoys loud music"
+    },
+    {
+      "_id": "active-b",
+      "age": 10,
+      "communicationStyle": "Rapid conversation, active games",
+      "interests": [
+        "sports"
+      ],
+      "sensoryNotes": "Enjoys loud music"
+    }
+  ],
+  "rows": [
+    {
+      "inputTokens": 954,
+      "matches": [
+        {
+          "childAId": "quiet-a",
+          "childBId": "quiet-b",
+          "reason": "Both children use a slow, one-symbol-turn-at-a-time communication style and both prefer a quiet space without sudden sounds, so they seem well matched for calm, easy interaction.",
+          "score": 0.9,
+          "watchOuts": "They have different listed interests (trains and drawing), so a parent may want to help find a shared activity; parents must approve this match before any introduction."
+        },
+        {
+          "childAId": "active-a",
+          "childBId": "active-b",
+          "reason": "Both children enjoy rapid conversation and active games and both are listed as enjoying loud music, so their communication pace and sensory preferences appear to line up.",
+          "score": 0.88,
+          "watchOuts": "Their interests differ (trains and sports), so an adult may need to suggest an activity they both like; parents must approve this match first."
+        }
+      ],
+      "ms": 2695,
+      "outputTokens": 326,
+      "topPair": "quiet-a:quiet-b",
+      "trial": 1,
+      "valid": true
+    },
+    {
+      "inputTokens": 954,
+      "matches": [
+        {
+          "childAId": "quiet-a",
+          "childBId": "quiet-b",
+          "reason": "Both children use a slow, one-symbol-at-a-time communication style and prefer a quiet space without sudden sounds, so their pace and sensory needs line up well.",
+          "score": 0.9,
+          "watchOuts": "They have different listed interests (trains and drawing), so a parent may want to suggest a shared activity; a parent must approve the match before any contact."
+        },
+        {
+          "childAId": "active-a",
+          "childBId": "active-b",
+          "reason": "Both children enjoy rapid conversation and active games and like loud music, so their communication pace and sensory preferences match closely.",
+          "score": 0.88,
+          "watchOuts": "Their listed interests differ (trains and sports), so they may need an activity that suits both; a parent must approve the match before any contact."
+        }
+      ],
+      "ms": 2726,
+      "outputTokens": 311,
+      "topPair": "quiet-a:quiet-b",
+      "trial": 2,
+      "valid": true
+    },
+    {
+      "inputTokens": 954,
+      "matches": [
+        {
+          "childAId": "quiet-a",
+          "childBId": "quiet-b",
+          "reason": "Both children use a slow, one-symbol-turn-at-a-time communication style and both prefer a quiet space without sudden sounds, so their pace and environment line up well.",
+          "score": 0.9,
+          "watchOuts": "Their interests differ (trains and drawing), so you may want to offer an activity that blends both, and a parent must approve the match before any contact."
+        },
+        {
+          "childAId": "active-a",
+          "childBId": "active-b",
+          "reason": "Both children enjoy rapid conversation and active games and both are noted as enjoying loud music, so their communication pace and sensory preferences look well matched.",
+          "score": 0.88,
+          "watchOuts": "Their interests differ (trains and sports), and a lively setting may need breaks or adjusting if either child seems overwhelmed; a parent must approve the match first."
+        }
+      ],
+      "ms": 2830,
+      "outputTokens": 331,
+      "topPair": "quiet-a:quiet-b",
+      "trial": 3,
+      "valid": true
+    }
+  ]
+}

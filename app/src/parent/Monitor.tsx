@@ -1,9 +1,10 @@
 // Live monitor: transcript of the open room + a big Pause/Resume button.
 // Pause patches rooms.status; the kid view greys out from the same live query.
 import { useEffect, useRef, useState } from 'react'
-import { useMutation, useQuery } from 'convex/react'
+import { useMutation, useQuery, usePaginatedQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
+import { useVoicePlayback } from '../audio/useVoicePlayback'
 import { wordByLabel } from '../kid/words.ts'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -27,8 +28,10 @@ export default function Monitor({
   const roomId = openMatch?.roomId ?? null
 
   const room = useQuery(api.rooms.get, roomId ? { roomId } : 'skip')
-  const messages = useQuery(api.messages.listByRoom, roomId ? { roomId } : 'skip')
+  const history = usePaginatedQuery(api.messages.historyByRoom, roomId ? { roomId } : 'skip', { initialNumItems: 50 })
+  const messages = [...history.results].reverse()
   const children = useQuery(api.children.list)
+  const playback = useVoicePlayback(room?.status === 'active')
   const pause = useMutation(api.rooms.pause)
   const resume = useMutation(api.rooms.resume)
   const [error, setError] = useState<string | null>(null)
@@ -40,7 +43,7 @@ export default function Monitor({
   useEffect(() => {
     const el = listRef.current
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-  }, [messages?.length, last?.status])
+  }, [last?._id, last?.status])
 
   if (matches === undefined) return <div className="pv-muted">Loading…</div>
   if (!openMatch || !roomId) {
@@ -93,8 +96,10 @@ export default function Monitor({
 
       <section ref={listRef} className="pv-card pv-transcript" aria-live="polite">
         <h2>Live transcript</h2>
-        {messages === undefined && <div className="pv-muted">Loading…</div>}
-        {messages?.length === 0 && <div className="pv-muted">No messages yet.</div>}
+        {history.status === 'CanLoadMore' && <button className="pv-btn" onClick={() => history.loadMore(50)}>Load older messages</button>}
+        {history.status === 'LoadingMore' && <p className="pv-muted">Loading older messages…</p>}
+        {history.status === 'LoadingFirstPage' && <div className="pv-muted">Loading…</div>}
+        {history.status !== 'LoadingFirstPage' && messages.length === 0 && <div className="pv-muted">No messages yet.</div>}
         <ol className="pv-msgs">
           {messages?.map((m) => (
             <li key={m._id} className={`pv-msg pv-msg-${m.status}`}>
@@ -125,7 +130,10 @@ export default function Monitor({
                   <button
                     className="pv-play"
                     aria-label="Replay audio"
-                    onClick={() => void new Audio(m.audioUrl!).play()}
+                    disabled={room?.status !== 'active'}
+                    onClick={() => {
+                      void playback.enable().then(() => playback.play(m.audioUrl!)).catch(() => setError('Audio could not start. Please try again.'))
+                    }}
                   >
                     ▶
                   </button>

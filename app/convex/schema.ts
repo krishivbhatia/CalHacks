@@ -68,5 +68,5 @@ export default defineSchema({
     ),
     audioStorageId: v.optional(v.id("_storage")),
     moderationNote: v.optional(v.string()),
-  }).index("by_room", ["roomId"]),
+  }).index("by_room", ["roomId"]).index("by_audioStorageId", ["audioStorageId"]),
 });

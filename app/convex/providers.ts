@@ -18,6 +18,7 @@ export function shortString(value: unknown, max = 500): string {
 export async function claudeTool(options: {
   model: string; system: string; data: unknown; name: string;
   schema: Record<string, unknown>; maxTokens?: number;
+  onUsage?: (usage: { inputTokens: number; outputTokens: number }) => void;
 }): Promise<Record<string, unknown>> {
   if (!env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not configured");
   const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -50,6 +51,8 @@ export async function claudeTool(options: {
     throw new Error(`Anthropic HTTP ${response.status}${detail}`);
   }
   const body = record(await response.json());
+  const usage = body.usage ? record(body.usage) : {};
+  options.onUsage?.({ inputTokens: typeof usage.input_tokens === "number" ? usage.input_tokens : 0, outputTokens: typeof usage.output_tokens === "number" ? usage.output_tokens : 0 });
   if (body.stop_reason !== "tool_use" || !Array.isArray(body.content)) throw new Error("Incomplete Claude result");
   const results = body.content.map(record).filter((b) => b.type === "tool_use" && b.name === options.name);
   if (results.length !== 1) throw new Error("Expected one Claude result");
