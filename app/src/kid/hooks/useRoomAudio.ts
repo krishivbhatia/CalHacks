@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useVoicePlayback } from '../../audio/useVoicePlayback.ts'
 
 export type SpokenMessage = { id: string; senderId: string; status: string; audioUrl: string | null }
-
-// 0.1s of silence. Playing it inside the start tap unlocks audio on iOS/Safari.
-const SILENT =
-  'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='
 
 /**
  * Plays the friend's spoken messages on THIS device, one at a time, exactly once each.
  * Messages that already exist when the room first loads are never replayed.
+ *
+ * Playback itself is the team's useVoicePlayback (unlocked AudioContext), which was verified
+ * on WebKit. This hook adds the queue, the "have I played this?" bookkeeping and the speaking id.
  */
 export function useRoomAudio({
   messages,
@@ -21,30 +21,29 @@ export function useRoomAudio({
   soundOn: boolean
   paused: boolean
 }) {
-  const audio = useRef<HTMLAudioElement | null>(null)
+  const voice = useVoicePlayback(!paused)
   const seen = useRef(new Set<string>())
   const primed = useRef(false)
   const queue = useRef<{ id: string; url: string }[]>([])
-  const playing = useRef(false)
-  const [speakingId, setSpeakingId] = useState<string | null>(null)
+  const busy = useRef(false)
+  const [currentId, setCurrentId] = useState<string | null>(null)
+  const { play } = voice
 
-  function playNext() {
-    if (playing.current) return
+  const startNext = useCallback(() => {
+    if (busy.current) return
     const next = queue.current.shift()
     if (!next) return
-    const el = (audio.current ??= new Audio())
-    playing.current = true
-    setSpeakingId(next.id)
-    const finish = () => {
-      el.onended = el.onerror = null
-      playing.current = false
-      setSpeakingId(null)
-      playNext()
-    }
-    el.onended = el.onerror = finish
-    el.src = next.url
-    el.play().catch(finish) // autoplay blocked: skip silently, the text is still shown
-  }
+    busy.current = true
+    setCurrentId(next.id)
+    play(next.url).catch(() => {}) // the hook reports the failure in its status
+  }, [play])
+
+  // A clip finished (or could not start): move on to the next one.
+  useEffect(() => {
+    if (voice.status === 'loading' || voice.status === 'playing') return
+    busy.current = false
+    startNext()
+  }, [voice.status, startNext])
 
   useEffect(() => {
     if (!messages || !meId) return
@@ -56,32 +55,29 @@ export function useRoomAudio({
     }
     if (!soundOn || paused) return
     for (const m of fresh) if (m.senderId !== meId) queue.current.push({ id: m.id, url: m.audioUrl! })
-    playNext()
+    startNext()
   })
 
-  // Pausing the room silences the device right away.
+  // Pausing the room drops anything waiting; the hook itself stops the clip that is playing.
   useEffect(() => {
-    if (!paused) return
-    queue.current = []
-    playing.current = false
-    audio.current?.pause()
-    const t = window.setTimeout(() => setSpeakingId(null), 0)
-    return () => window.clearTimeout(t)
+    if (paused) queue.current = []
   }, [paused])
 
-  useEffect(() => () => audio.current?.pause(), [])
-
+  const playing = voice.status === 'loading' || voice.status === 'playing'
   return {
-    speakingId,
-    /** Call from the start-tap so later audio is allowed to play. */
+    speakingId: playing ? currentId : null,
+    /** Call from the start tap: browsers only allow sound after an explicit gesture. */
     unlock() {
-      const el = (audio.current ??= new Audio())
-      el.src = SILENT
-      el.play().catch(() => {})
+      voice.enable().catch(() => {})
     },
     replay(url: string, id: string) {
-      queue.current.push({ id, url })
-      playNext()
+      voice
+        .enable()
+        .catch(() => {})
+        .then(() => {
+          queue.current.push({ id, url })
+          startNext()
+        })
     },
   }
 }
