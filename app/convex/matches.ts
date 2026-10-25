@@ -1,5 +1,32 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalQuery, internalMutation } from "./_generated/server";
 import { v } from "convex/values";
+
+export const candidates = internalQuery({
+  args: {},
+  handler: async ctx => ctx.db.query("children").take(20),
+});
+
+export const saveProposals = internalMutation({
+  args: { matches: v.array(v.object({ childAId: v.id("children"), childBId: v.id("children"),
+    score: v.number(), reason: v.string(), watchOuts: v.string() })) },
+  handler: async (ctx, { matches }) => {
+    let saved = 0;
+    for (const proposal of matches) {
+      if (proposal.childAId === proposal.childBId || !Number.isFinite(proposal.score) || proposal.score < 0 || proposal.score > 1) throw new Error("Invalid proposal");
+      if (!(await ctx.db.get(proposal.childAId)) || !(await ctx.db.get(proposal.childBId))) continue;
+      const existing = [
+        ...await ctx.db.query("matches").withIndex("by_childA", q => q.eq("childAId", proposal.childAId)).take(100),
+        ...await ctx.db.query("matches").withIndex("by_childB", q => q.eq("childBId", proposal.childAId)).take(100),
+      ].find(m => m.childAId === proposal.childBId || m.childBId === proposal.childBId);
+      if (existing) {
+        if (existing.status !== "proposed" || existing.parentAApproved || existing.parentBApproved) continue;
+        await ctx.db.patch(existing._id, { score: proposal.score, reason: proposal.reason, watchOuts: proposal.watchOuts });
+      } else await ctx.db.insert("matches", { ...proposal, status: "proposed", parentAApproved: false, parentBApproved: false });
+      saved++;
+    }
+    return saved;
+  },
+});
 
 // Matches involving this parent's child, with the other child's profile.
 export const listForParent = query({

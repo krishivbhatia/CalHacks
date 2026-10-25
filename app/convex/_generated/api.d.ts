@@ -10,8 +10,10 @@
 
 import type * as ai from "../ai.js";
 import type * as children from "../children.js";
+import type * as diagnostics from "../diagnostics.js";
 import type * as matches from "../matches.js";
 import type * as messages from "../messages.js";
+import type * as providers from "../providers.js";
 import type * as rateLimit from "../rateLimit.js";
 import type * as rooms from "../rooms.js";
 import type * as seed from "../seed.js";
@@ -26,8 +28,10 @@ import type {
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   children: typeof children;
+  diagnostics: typeof diagnostics;
   matches: typeof matches;
   messages: typeof messages;
+  providers: typeof providers;
   rateLimit: typeof rateLimit;
   rooms: typeof rooms;
   seed: typeof seed;

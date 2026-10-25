@@ -30,6 +30,12 @@ import type { DataModel } from "./dataModel.js";
 type Env = {
   readonly CONVEX_CLOUD_URL: string;
   readonly CONVEX_SITE_URL: string;
+  readonly ANTHROPIC_API_KEY: string | undefined;
+  readonly ANTHROPIC_FAST_MODEL: string | undefined;
+  readonly ANTHROPIC_MATCH_MODEL: string | undefined;
+  readonly CARTESIA_API_KEY: string | undefined;
+  readonly CARTESIA_MODEL_ID: string | undefined;
+  readonly CARTESIA_VERSION: string | undefined;
 };
 
 /**

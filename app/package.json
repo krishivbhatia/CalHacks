@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "reset": "convex run seed:reset"
+    "reset": "convex run seed:reset",
+    "test": "vitest run",
+    "typecheck:backend": "tsc --noEmit -p convex/tsconfig.json"
   },
   "dependencies": {
     "@convex-dev/rate-limiter": "^0.4.2",
@@ -17,12 +19,15 @@
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "convex-test": "^0.0.65",
     "oxlint": "^1.88.0",
     "typescript": "~6.0.3",
-    "vite": "^8.3.4"
+    "vite": "^8.3.4",
+    "vitest": "^4.1.12"
   }
 }

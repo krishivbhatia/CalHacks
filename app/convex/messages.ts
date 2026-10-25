@@ -48,6 +48,10 @@ export const sendSymbols = mutation({
     if (symbols.length === 0 || symbols.length > 6) {
       throw new Error("Send between 1 and 6 symbols");
     }
+    const child = await ctx.db.get(childId);
+    if (!child || symbols.some(symbol => !child.symbolSet.includes(symbol))) {
+      throw new Error("Choose symbols from this child's grid");
+    }
       const rl = await rateLimiter.limit(ctx, "sendSymbols", { key: roomId });
     if (!rl.ok) throw new Error("Slow down a little");
 
@@ -138,6 +142,11 @@ export const setDraft = internalMutation({
   handler: async (ctx, { messageId, draftText }) => {
     const m = await ctx.db.get(messageId);
     if (!m || m.status !== "drafting") return; // child may have rejected already
+    const room = await ctx.db.get(m.roomId);
+    if (room?.status !== "active") {
+      await ctx.db.patch(messageId, { status: "rejected" });
+      return;
+    }
     await ctx.db.patch(messageId, { draftText, status: "draft" });
   },
 });
@@ -145,6 +154,8 @@ export const setDraft = internalMutation({
 export const setFlagged = internalMutation({
   args: { messageId: v.id("messages"), moderationNote: v.string() },
   handler: async (ctx, { messageId, moderationNote }) => {
+    const m = await ctx.db.get(messageId);
+    if (!m || m.status !== "confirmed" || m.moderationNote?.startsWith("speaking:")) return;
     await ctx.db.patch(messageId, { status: "flagged", moderationNote });
   },
 });
@@ -155,6 +166,91 @@ export const setSpoken = internalMutation({
     audioStorageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, { messageId, audioStorageId }) => {
-    await ctx.db.patch(messageId, { status: "spoken", audioStorageId });
+    void ctx; void messageId; void audioStorageId;
+    throw new Error("Use messages.finishSpeech after moderation");
+  },
+});
+
+// Internal pipeline helpers; no new message statuses or tables.
+export const generationContext = internalQuery({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, { messageId }) => {
+    const message = await ctx.db.get(messageId);
+    if (!message) return null;
+    const room = await ctx.db.get(message.roomId);
+    const child = await ctx.db.get(message.senderChildId);
+    if (!room || room.status !== "active" || !child) return null;
+    const history = await ctx.db.query("messages").withIndex("by_room", q => q.eq("roomId", message.roomId)).order("desc").take(30);
+    const recent = history.filter(m => m._creationTime < message._creationTime &&
+      (m.status === "confirmed" || m.status === "spoken") && m.finalText).slice(0, 5).reverse()
+      .map(m => ({ text: m.finalText, senderChildId: m.senderChildId }));
+    return { message, child, recent };
+  },
+});
+
+export const generationFailed = internalMutation({
+  args: { messageId: v.id("messages") },
+  handler: async (ctx, { messageId }) => {
+    const m = await ctx.db.get(messageId);
+    if (m?.status === "drafting") await ctx.db.patch(messageId, {
+      status: "rejected", moderationNote: "Draft unavailable. Please try the symbols again.",
+    });
+  },
+});
+
+export const approveSpeech = internalMutation({
+  args: { messageId: v.id("messages"), text: v.string() },
+  handler: async (ctx, { messageId, text }) => {
+    const m = await ctx.db.get(messageId);
+    if (!m || m.status !== "confirmed" || m.finalText !== text ||
+      m.moderationNote === "approved" || m.moderationNote?.startsWith("speaking:")) return;
+    const room = await ctx.db.get(m.roomId);
+    if (room?.status !== "active") return;
+    await ctx.db.patch(messageId, { moderationNote: "approved" });
+    await ctx.scheduler.runAfter(0, internal.voice.speak, { messageId });
+  },
+});
+
+export const claimSpeech = internalMutation({
+  args: { messageId: v.id("messages"), token: v.string(), cacheKey: v.string() },
+  handler: async (ctx, { messageId, token, cacheKey }) => {
+    const m = await ctx.db.get(messageId);
+    if (!m || m.status !== "confirmed" || !m.finalText || m.moderationNote !== "approved") return null;
+    const room = await ctx.db.get(m.roomId);
+    const child = await ctx.db.get(m.senderChildId);
+    if (room?.status !== "active" || !child) return null;
+    await ctx.db.patch(messageId, { moderationNote: `speaking:${token}` });
+    const previous = await ctx.db.query("messages").withIndex("by_room", q => q.eq("roomId", m.roomId)).order("desc").take(100);
+    const cached = previous.find(p => p.status === "spoken" && p.finalText === m.finalText &&
+      p.moderationNote === JSON.stringify({ voiceId: child.voiceId, cacheKey }) && p.audioStorageId);
+    return { text: m.finalText, voiceId: child.voiceId, cachedStorageId: cached?.audioStorageId ?? null };
+  },
+});
+
+export const finishSpeech = internalMutation({
+  args: { messageId: v.id("messages"), token: v.string(), text: v.string(),
+    voiceId: v.string(), cacheKey: v.string(), audioStorageId: v.id("_storage") },
+  handler: async (ctx, args) => {
+    const m = await ctx.db.get(args.messageId);
+    if (!m || m.status !== "confirmed" || m.finalText !== args.text || m.moderationNote !== `speaking:${args.token}`) return false;
+    const room = await ctx.db.get(m.roomId);
+    const child = await ctx.db.get(m.senderChildId);
+    if (room?.status !== "active" || child?.voiceId !== args.voiceId) {
+      await ctx.db.patch(m._id, { moderationNote: "Speech cancelled while room or voice changed. Retry moderation after resuming." });
+      return false;
+    }
+    await ctx.db.patch(m._id, { status: "spoken", audioStorageId: args.audioStorageId,
+      moderationNote: JSON.stringify({ voiceId: args.voiceId, cacheKey: args.cacheKey }) });
+    return true;
+  },
+});
+
+export const speechFailed = internalMutation({
+  args: { messageId: v.id("messages"), token: v.string() },
+  handler: async (ctx, { messageId, token }) => {
+    const m = await ctx.db.get(messageId);
+    if (m?.status === "confirmed" && m.moderationNote === `speaking:${token}`) {
+      await ctx.db.patch(messageId, { moderationNote: "Audio unavailable. Retry moderation to try again." });
+    }
   },
 });

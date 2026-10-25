@@ -18,7 +18,7 @@ export const reset = internalMutation({
       }
     }
 
-    // voiceId values are placeholders: Person B replaces with real Cartesia ids.
+    // Maya/Leo use verified stock voice IDs; other profiles still need voices.
     const mk = (
       name: string, age: number, interests: string[],
       communicationStyle: string, sensoryNotes: string,
@@ -33,12 +33,12 @@ export const reset = internalMutation({
       "Uses a symbol tablet; prefers short turns",
       "Sensitive to loud noises",
       "Maya loves trains and bright colors. She communicates with symbols and does best taking short turns.",
-      "VOICE_ID_MAYA");
+      "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4"); // Skylar, stock
     const leo = await mk("Leo", 10, ["trains", "puzzles"],
       "Uses a symbol tablet; likes taking turns",
       "Prefers calm, quiet spaces",
       "Leo loves trains and puzzles. He uses symbols and enjoys predictable, turn-based play.",
-      "VOICE_ID_LEO");
+      "30894953-bcce-41fe-892c-15ce19c843ff"); // Parker, stock
     const aiden = await mk("Aiden", 11, ["dinosaurs", "space"],
       "Uses a symbol tablet plus a few spoken words",
       "Dislikes bright flashing lights",
