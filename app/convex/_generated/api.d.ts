@@ -17,6 +17,8 @@ import type * as providers from "../providers.js";
 import type * as rateLimit from "../rateLimit.js";
 import type * as rooms from "../rooms.js";
 import type * as seed from "../seed.js";
+import type * as symbols from "../symbols.js";
+import type * as vocabulary from "../vocabulary.js";
 import type * as voice from "../voice.js";
 
 import type {
@@ -35,6 +37,8 @@ declare const fullApi: ApiFromModules<{
   rateLimit: typeof rateLimit;
   rooms: typeof rooms;
   seed: typeof seed;
+  symbols: typeof symbols;
+  vocabulary: typeof vocabulary;
   voice: typeof voice;
 }>;
 

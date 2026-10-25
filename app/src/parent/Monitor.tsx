@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Id } from '../../convex/_generated/dataModel'
+import { wordByLabel } from '../kid/words.ts'
 
 const STATUS_LABEL: Record<string, string> = {
   drafting: 'Writing…',
@@ -107,9 +108,16 @@ export default function Monitor({
                 </time>
               </div>
               <div className="pv-symbols">
-                {m.symbols.map((s, i) => (
-                  <span key={i} className="pv-chip">{s}</span>
-                ))}
+                {m.symbols.map((s, i) => {
+                  // Any vocabulary word shows its pictogram; an unknown label still shows as text.
+                  const word = wordByLabel.get(s.toLowerCase())
+                  return (
+                    <span key={i} className="pv-chip pv-chip-sym">
+                      {word && <img src={word.image} alt="" width={20} height={20} />}
+                      {s}
+                    </span>
+                  )
+                })}
               </div>
               <div className="pv-text">
                 {m.finalText ?? m.draftText ?? '…'}

@@ -1,4 +1,5 @@
 import { rateLimiter } from "./rateLimit";
+import { resolveSymbols } from "./symbols";
 
 import {
   mutation,
@@ -49,8 +50,11 @@ export const sendSymbols = mutation({
       throw new Error("Send between 1 and 6 symbols");
     }
     const child = await ctx.db.get(childId);
-    if (!child || symbols.some(symbol => !child.symbolSet.includes(symbol))) {
-      throw new Error("Choose symbols from this child's grid");
+    // Any TapTalk vocabulary word is allowed; symbolSet is the child's quick-access list (and may
+    // hold custom words). Stored in canonical form so every spelling of a word is one value.
+    const resolved = child ? resolveSymbols(symbols, child.symbolSet) : null;
+    if (!child || !resolved) {
+      throw new Error("Choose symbols from the TapTalk vocabulary");
     }
       const rl = await rateLimiter.limit(ctx, "sendSymbols", { key: roomId });
     if (!rl.ok) throw new Error("Slow down a little");
@@ -78,7 +82,7 @@ export const sendSymbols = mutation({
     const messageId = await ctx.db.insert("messages", {
       roomId,
       senderChildId: childId,
-      symbols,
+      symbols: resolved,
       status: "drafting",
     });
     await ctx.scheduler.runAfter(0, internal.ai.expandSymbols, { messageId });
