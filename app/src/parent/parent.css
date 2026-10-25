@@ -143,3 +143,6 @@
   .pv-pause { width: 100%; }
   .pv-tab { padding: 8px 10px; font-size: 15px; }
 }
+
+.pv-chip-sym { display: inline-flex; align-items: center; gap: 6px; }
+.pv-chip-sym img { background: #fff; border-radius: 5px; }

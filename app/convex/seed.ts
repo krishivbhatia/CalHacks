@@ -1,15 +1,11 @@
 // Run:  npx convex run seed:reset
 // Wipes everything and restores the demo state. All data is synthetic.
 import { internalMutation } from "./_generated/server";
-import { WORDS } from "../src/kid/vocabulary";
 
-// The kid board's full vocabulary (src/kid/vocabulary.ts). Labels are what sendSymbols checks and
-// what Claude receives. The original 12 stay first; the rest are appended.
-const BASE_SYMBOLS = [
+const SYMBOLS = [
   "train", "red", "blue", "yes", "no", "more", "my turn", "hi",
   "bye", "happy", "play", "look",
 ];
-const SYMBOLS = [...new Set([...BASE_SYMBOLS, ...WORDS.map((w) => w.label)])];
 
 export const reset = internalMutation({
   args: {},

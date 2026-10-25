@@ -16,7 +16,7 @@ import { useRoomAudio } from './hooks/useRoomAudio.ts'
 import { colorFor } from './colors.ts'
 import { suggestFor } from './suggestions.ts'
 import type { FeedMessage, Person } from './types.ts'
-import type { Word } from './words.ts'
+import { favoritesFor, type Word } from './words.ts'
 
 // messages.sendSymbols accepts 1 to 6 symbols.
 const MAX_WORDS = 6
@@ -161,7 +161,7 @@ function Room({ child, roomId, paused }: { child: Child; roomId: Id<'rooms'>; pa
     setNotice("That message wasn't sent. Try different words.")
   }, [messages, child._id])
 
-  const allowed = useMemo(() => new Set(child.symbolSet), [child.symbolSet])
+  const favorites = useMemo(() => favoritesFor(child.symbolSet), [child.symbolSet])
   const lastSpokenFromFriend = messages?.findLast(
     (m) => m.senderChildId !== child._id && m.status === 'spoken' && m.audioUrl,
   )
@@ -214,7 +214,7 @@ function Room({ child, roomId, paused }: { child: Child; roomId: Id<'rooms'>; pa
             friend={friend}
             strip={strip}
             maxWords={MAX_WORDS}
-            allowed={allowed}
+            favorites={favorites}
             locked={locked}
             status={status}
             draft={pending?.status === 'draft' ? (pending.draftText ?? null) : null}
@@ -264,6 +264,6 @@ function friendlyError(e: unknown) {
   if (msg.includes('Slow down')) return 'Whoa, slow down a little!'
   if (msg.includes('not active')) return 'We are taking a break right now.'
   if (msg.includes('Finish or reject')) return 'Finish your last message first.'
-  if (msg.includes("child's grid")) return "One of those pictures isn't on your board yet."
+  if (msg.includes('vocabulary')) return "One of those pictures isn't available yet."
   return 'Something went wrong. Try again.'
 }

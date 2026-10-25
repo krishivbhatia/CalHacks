@@ -15,8 +15,8 @@ type Props = {
   friend: Person | null
   strip: Word[]
   maxWords: number
-  /** Labels this child's grid allows (children.symbolSet). Others are shown but disabled. */
-  allowed: Set<string>
+  /** The child's quick-access words (children.symbolSet), shown under "My words". */
+  favorites: Word[]
   locked: boolean
   status: ComposeStatus
   draft: string | null
@@ -33,28 +33,26 @@ type Props = {
 }
 
 const MAIN = 'core'
+const MINE = { id: 'mine', name: 'My words', short: 'My words', color: '#e879f9', icon: '/symbols/heart.png' }
 
 function Tile({
   word,
   count,
   disabled,
-  offGrid,
   onPick,
   compact,
 }: {
   word: Word
   count: number
   disabled: boolean
-  offGrid: boolean
   onPick: (w: Word) => void
   compact?: boolean
 }) {
   return (
     <motion.button
-      className={`tile ${compact ? 'compact' : ''} ${count > 0 ? 'is-selected' : ''} ${offGrid ? 'is-off' : ''}`}
-      disabled={disabled || offGrid}
+      className={`tile ${compact ? 'compact' : ''} ${count > 0 ? 'is-selected' : ''}`}
+      disabled={disabled}
       aria-pressed={count > 0}
-      title={offGrid ? 'Not on your board yet' : undefined}
       onClick={() => onPick(word)}
       whileTap={{ scale: 0.94 }}
       transition={{ type: 'spring', stiffness: 520, damping: 30 }}
@@ -71,7 +69,7 @@ export default function Board({
   friend,
   strip,
   maxWords,
-  allowed,
+  favorites,
   locked,
   status,
   draft,
@@ -89,8 +87,9 @@ export default function Board({
   const [categoryId, setCategoryId] = useState(MAIN)
   const [dismissed, setDismissed] = useState<string | null>(null)
   const gridRef = useRef<HTMLDivElement>(null)
-  const category = categoryById.get(categoryId)!
-  const words = wordsInCategory(categoryId)
+  const categories = favorites.length > 0 ? [MINE, ...CATEGORIES] : CATEGORIES
+  const category = categoryId === MINE.id ? MINE : categoryById.get(categoryId)!
+  const words = categoryId === MINE.id ? favorites : wordsInCategory(categoryId)
   const full = strip.length >= maxWords
 
   const counts = new Map<string, number>()
@@ -113,7 +112,6 @@ export default function Board({
     word: w,
     count: counts.get(w.id) ?? 0,
     disabled: locked || full,
-    offGrid: !allowed.has(w.label),
     onPick,
   })
 
@@ -138,7 +136,7 @@ export default function Board({
       </div>
 
       <nav className="cats" role="tablist" aria-label="Word categories">
-        {CATEGORIES.map((c) => (
+        {categories.map((c) => (
           <button
             key={c.id}
             role="tab"
@@ -215,7 +213,7 @@ export default function Board({
                 <button
                   key={w.id}
                   className="s-chip"
-                  disabled={locked || full || !allowed.has(w.label)}
+                  disabled={locked || full}
                   onClick={() => onPick(w)}
                 >
                   <Pictogram src={w.image} size={22} />
