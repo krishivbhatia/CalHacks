@@ -1,3 +1,5 @@
+import { rateLimiter } from "./rateLimit";
+
 import {
   mutation,
   query,
@@ -46,6 +48,8 @@ export const sendSymbols = mutation({
     if (symbols.length === 0 || symbols.length > 6) {
       throw new Error("Send between 1 and 6 symbols");
     }
+      const rl = await rateLimiter.limit(ctx, "sendSymbols", { key: roomId });
+    if (!rl.ok) throw new Error("Slow down a little");
 
     // One unfinished draft per child at a time. Drafts older than 30s are
     // treated as stuck and auto-rejected so a child is never locked out.
@@ -85,6 +89,8 @@ export const confirm = mutation({
     const m = await ctx.db.get(messageId);
     if (!m) throw new Error("Message not found");
     if (m.status !== "draft") return; // idempotent against double taps
+    const rl = await rateLimiter.limit(ctx, "confirm", { key: m.roomId });
+    if (!rl.ok) throw new Error("Slow down a little");
     const room = await ctx.db.get(m.roomId);
     if (!room || room.status !== "active") throw new Error("Room is not active");
     await ctx.db.patch(messageId, {

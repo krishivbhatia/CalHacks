@@ -12,6 +12,7 @@ import type * as ai from "../ai.js";
 import type * as children from "../children.js";
 import type * as matches from "../matches.js";
 import type * as messages from "../messages.js";
+import type * as rateLimit from "../rateLimit.js";
 import type * as rooms from "../rooms.js";
 import type * as seed from "../seed.js";
 import type * as voice from "../voice.js";
@@ -27,6 +28,7 @@ declare const fullApi: ApiFromModules<{
   children: typeof children;
   matches: typeof matches;
   messages: typeof messages;
+  rateLimit: typeof rateLimit;
   rooms: typeof rooms;
   seed: typeof seed;
   voice: typeof voice;
@@ -58,4 +60,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+};
