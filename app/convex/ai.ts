@@ -1,6 +1,9 @@
-import { internalAction, env } from "./_generated/server";
+import { internalAction, action, env } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
+import { intakeAgent } from "./intakeAgent";
+import { turnSchema } from "./intakeTypes";
+import { Output } from "ai";
 import { claudeTool, fastModel, matchModel, record, shortString, voiceModel, voiceVersion } from "./providers";
 
 // Dashboard/CLI diagnostics: reports presence, never secret values.
@@ -91,5 +94,29 @@ export const proposeMatches = internalAction({
         reason: shortString(m.reason), watchOuts: shortString(m.watchOuts) };
     });
     return await ctx.runMutation(internal.matches.saveProposals, { matches });
+  },
+});
+
+// Public wizard entrypoint; durable history lives in the Agent component.
+export const intakeTurn = action({
+  args: { parentId: v.id("parents"), message: v.string(), requestId: v.string() },
+  handler: async (ctx, args): Promise<import("./intake").IntakeResult> => {
+    const token = crypto.randomUUID();
+    const reservation = await ctx.runMutation(internal.intake.reserveTurn, { ...args, token });
+    if (reservation.cached) return reservation.result;
+    try {
+      const result = await intakeAgent(reservation.turnCount).generateText(ctx, { threadId: reservation.threadId }, {
+        promptMessageId: reservation.messageId, output: Output.object({ schema: turnSchema }),
+        maxOutputTokens: 2000, maxRetries: 0, abortSignal: AbortSignal.timeout(45_000),
+        providerOptions: { anthropic: { structuredOutputMode: "outputFormat" } },
+      });
+      const output = turnSchema.parse(result.output);
+      const committed = await ctx.runMutation(internal.intake.completeTurn, { parentId: args.parentId, token, ...output });
+      if (!committed) throw new Error("Intake changed while generating");
+      return output;
+    } catch {
+      await ctx.runMutation(internal.intake.failTurn, { parentId: args.parentId, token });
+      throw new Error("Claude could not finish this reply. Please retry your message.");
+    }
   },
 });

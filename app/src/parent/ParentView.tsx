@@ -68,7 +68,7 @@ export default function ParentView() {
       <main className="pv-main">
         {tab === 'monitor' && <Monitor parentId={parent._id} onGoToMatches={() => setTab('matches')} />}
         {tab === 'matches' && <Matches parentId={parent._id} onGoToMonitor={() => setTab('monitor')} />}
-        {tab === 'intake' && <Intake childId={parent.childId} />}
+        {tab === 'intake' && <Intake key={parent._id} parentId={parent._id} childId={parent.childId} />}
       </main>
     </div>
   )

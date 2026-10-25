@@ -3,7 +3,7 @@
 Implemented in `convex/ai.ts`, `convex/voice.ts`, and internal helpers in
 `convex/messages.ts` and `convex/matches.ts`. All external requests run from
 Convex actions. Public message mutation signatures, tables, and statuses stay
-unchanged. Intake remains optional and is not implemented yet.
+unchanged. Live parent intake is implemented with durable Agent threads and an explicit approval gate.
 
 ## Connect to the team's backend
 
@@ -157,5 +157,47 @@ pending downloads/decodes and stops the active source. Person C can reuse this
 hook; the actual kid screen is still a placeholder, so this verifies the
 separate two-browser harness rather than C's finished UI. The two clients ran
 in the same in-app browser on one machine; physical two-device listening still
-needs a demo rehearsal. Optional parent intake
-is still scripted in D's UI; `ai.intakeTurn` has not been implemented.
+needs a demo rehearsal. Live parent intake now replaces the scripted chat; see the intake section below.
+
+
+## Live parent intake
+
+Open `/parent?parent=maya&tab=intake` (or another synthetic seeded parent).
+The frontend calls public `ai.intakeTurn({ parentId, message, requestId })`.
+Claude Sonnet asks short follow-ups and returns `{ reply, profile }`, with
+`profile: null` until ready. After at most three successful parent answers it
+must produce a reviewable profile, using “Not provided” for missing details.
+
+The optional `parents.intake` object is the only application-schema addition.
+It stores the component thread ID, draft, status, monotonic revision, request
+lease and retry metadata. Conversation history is stored in the mounted
+`@convex-dev/agent` component, not a new application messages table. Existing
+parent rows remain valid. `intake.get` reloads durable conversation and draft
+state. `intake.restart` clears the conversation/draft and deletes the old thread,
+while leaving the approved child profile in place.
+
+Drafts do not change `children`. The review form permits parent edits, and only
+`intake.approve({ parentId, revision, profile })` updates the child profile and
+stores the approved transcript in `parents.intakeTranscript`. Name, age,
+voice ID, and symbol set are preserved. Interaction style is appended to the
+existing `communicationStyle` string to preserve the shared child schema.
+Matching reads the approved child fields; already-generated match reasons are
+not automatically regenerated. Run `ai:proposeMatches` to refresh unapproved
+suggestions after a profile change.
+
+Requests are serialized with a 90-second lease; provider calls time out after
+45 seconds. Completed request IDs are idempotent, and a failed request reuses
+the same saved parent prompt on retry. Late results cannot overwrite a newer
+request token. Revisions remain monotonic across restarts, preventing an old
+browser from approving a previous draft. The chat limits message length and
+rejects common contact details before persistence/provider calls; the prompt
+never solicits surnames, school names, addresses or diagnoses. These checks are
+limited safeguards; all demo details must remain synthetic. The app still uses
+the team's existing parent-ID demo contract, not authenticated ownership.
+
+Verification: a live two-answer conversation produced a grounded profile. In the
+parent browser, editing interests, approving, and refreshing preserved the edits
+and conversation. Before approval, the child still had its original profile.
+Unit tests cover draft isolation, approval, preserved identity/voice, stale
+revisions/tokens, retries, malformed output and contact details. Both string
+messages and the SDK's text-block arrays are supported when reading history.

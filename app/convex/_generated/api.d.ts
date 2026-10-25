@@ -11,6 +11,9 @@
 import type * as ai from "../ai.js";
 import type * as children from "../children.js";
 import type * as diagnostics from "../diagnostics.js";
+import type * as intake from "../intake.js";
+import type * as intakeAgent from "../intakeAgent.js";
+import type * as intakeTypes from "../intakeTypes.js";
 import type * as matches from "../matches.js";
 import type * as messages from "../messages.js";
 import type * as providers from "../providers.js";
@@ -31,6 +34,9 @@ declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   children: typeof children;
   diagnostics: typeof diagnostics;
+  intake: typeof intake;
+  intakeAgent: typeof intakeAgent;
+  intakeTypes: typeof intakeTypes;
   matches: typeof matches;
   messages: typeof messages;
   providers: typeof providers;
@@ -70,4 +76,5 @@ export declare const internal: FilterApi<
 
 export declare const components: {
   rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+  agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
 };

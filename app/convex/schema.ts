@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { intakeStateValidator } from "./intakeTypes";
 
 export default defineSchema({
   children: defineTable({
@@ -17,6 +18,7 @@ export default defineSchema({
     childId: v.id("children"),
     displayName: v.string(),
     intakeTranscript: v.optional(v.string()),
+    intake: v.optional(intakeStateValidator),
   })
     .index("by_displayName", ["displayName"])
     .index("by_child", ["childId"]),

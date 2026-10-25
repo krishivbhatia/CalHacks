@@ -146,3 +146,9 @@
 
 .pv-chip-sym { display: inline-flex; align-items: center; gap: 6px; }
 .pv-chip-sym img { background: #fff; border-radius: 5px; }
+
+.pv-profile-form { display: grid; gap: 14px; }
+.pv-profile-form label { display: grid; gap: 6px; font-weight: 600; }
+.pv-profile-form input, .pv-profile-form textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--pv-line); border-radius: 10px; font: inherit; color: var(--pv-ink); background: var(--pv-card); }
+.pv-profile-form textarea { min-height: 80px; resize: vertical; }
+.pv-profile-form :disabled { opacity: .7; }

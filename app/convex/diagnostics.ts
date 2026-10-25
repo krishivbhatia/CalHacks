@@ -1,7 +1,33 @@
 // Operator-only checks: no credentials or provider error bodies are returned.
 import { internalAction, internalMutation, env } from "./_generated/server";
 import { v } from "convex/values";
+import { components } from "./_generated/api";
 import { claudeTool, fastModel, record, shortString, voiceVersion } from "./providers";
+
+export const createIntakeFixture = internalMutation({
+  args: {},
+  handler: async ctx => {
+    const childId = await ctx.db.insert("children", { name: "B Intake Test", age: 9,
+      interests: ["Original interest"], communicationStyle: "Original communication",
+      sensoryNotes: "Original sensory notes", symbolSet: ["train"],
+      profileSummary: "Synthetic intake fixture", voiceId: "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4" });
+    const parentId = await ctx.db.insert("parents", { childId, displayName: "b-intake-test's parent" });
+    return { childId, parentId };
+  },
+});
+
+export const removeIntakeFixture = internalMutation({
+  args: { parentId: v.id("parents") },
+  handler: async (ctx, { parentId }) => {
+    const parent = await ctx.db.get(parentId);
+    if (!parent) return;
+    const child = await ctx.db.get(parent.childId);
+    if (child?.name !== "B Intake Test" || parent.displayName !== "b-intake-test's parent") throw new Error("Not an intake fixture");
+    if (parent.intake) await ctx.runMutation(components.agent.threads.deleteAllForThreadIdAsync, { threadId: parent.intake.threadId });
+    await ctx.db.delete(parentId);
+    await ctx.db.delete(child._id);
+  },
+});
 
 // Separate synthetic records keep operator checks out of the team's demo room.
 export const createSmokeRoom = internalMutation({
