@@ -201,3 +201,19 @@ and conversation. Before approval, the child still had its original profile.
 Unit tests cover draft isolation, approval, preserved identity/voice, stale
 revisions/tokens, retries, malformed output and contact details. Both string
 messages and the SDK's text-block arrays are supported when reading history.
+
+## Profile entry page
+
+The `/` route now offers all five synthetic child screens and a parent login.
+Select a child and enter the case-sensitive shared demo password `Parent` to
+open that parent's screen. Direct `/parent` links use the same gate, including
+intake links. The selected parent stays unlocked in that tab's session storage;
+"Lock and switch profile" clears it and returns to `/`.
+
+This is a frontend demo gate, not authentication or authorization for Convex
+queries/mutations. Do not rely on it to protect real family data. No password
+is saved in browser storage or sent in a URL.
+
+Verified in browser: wrong password rejected, direct parent link gated, correct
+password opens the selected parent/tab, locking revokes access, and child links
+open without a password. Production build and lint pass.
