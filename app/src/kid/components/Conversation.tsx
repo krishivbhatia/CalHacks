@@ -111,9 +111,9 @@ export default function Conversation({
       <div className="messages" role="log" aria-live="polite">
         {messages.length === 0 && !typing && (
           <div className="empty-chat">
-            <Avatar name={avatarName} color={friendColor} size={64} />
-            <p>Say hi to {friend?.name ?? 'your friend'}!</p>
-            <span>Tap a picture to start.</span>
+            <Avatar name={avatarName} color={friendColor} size={80} />
+            <p>Ready to talk with {friend?.name ?? 'your friend'}?</p>
+            <span>Tap a picture on the left to send your first message!</span>
           </div>
         )}
         <AnimatePresence initial={false}>
