@@ -21,8 +21,27 @@ import { favoritesFor, type Word } from './words.ts'
 // messages.sendSymbols accepts 1 to 6 symbols.
 const MAX_WORDS = 6
 
+type Theme = 'light' | 'dark'
+
+// Light or dark follows the device until the child (or a grown-up) picks one; the choice is remembered.
+function useTheme(): [Theme, () => void] {
+  const [theme, setTheme] = useState<Theme>(() => {
+    try {
+      const saved = localStorage.getItem('taptalk.theme')
+      if (saved === 'light' || saved === 'dark') return saved
+    } catch { /* storage unavailable: fall through to the device setting */ }
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  })
+  useEffect(() => {
+    document.body.classList.toggle('kid-dark', theme === 'dark')
+    try { localStorage.setItem('taptalk.theme', theme) } catch { /* not remembered */ }
+  }, [theme])
+  return [theme, () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))]
+}
+
 export default function KidView() {
   const childName = new URLSearchParams(window.location.search).get('child')
+  const [theme, toggleTheme] = useTheme()
 
   // Scope the page-level look (black background, full height) to this screen only.
   useEffect(() => {
@@ -30,7 +49,7 @@ export default function KidView() {
     document.body.classList.add('kid-body')
     return () => {
       document.documentElement.classList.remove('kid-html')
-      document.body.classList.remove('kid-body')
+      document.body.classList.remove('kid-body', 'kid-dark')
     }
   }, [])
 
@@ -39,25 +58,25 @@ export default function KidView() {
 
   if (!childName) {
     return (
-      <Shell>
+      <Shell theme={theme}>
         <Status title="Who is playing?" body="Open this page as /kid?child=maya or /kid?child=leo." />
       </Shell>
     )
   }
-  if (child === undefined) return <Shell><Status title="Loading…" /></Shell>
+  if (child === undefined) return <Shell theme={theme}><Status title="Loading…" /></Shell>
   if (child === null) {
     return (
-      <Shell>
+      <Shell theme={theme}>
         <Status title="Hmm, who is that?" body={`We couldn't find a child called “${childName}”.`}>
           <a className="gate-btn" href="/">Back</a>
         </Status>
       </Shell>
     )
   }
-  if (room === undefined) return <Shell><Status title="Loading…" /></Shell>
+  if (room === undefined) return <Shell theme={theme}><Status title="Loading…" /></Shell>
   if (room === null) {
     return (
-      <Shell>
+      <Shell theme={theme}>
         <Status
           title={`Hi ${child.name}!`}
           body="Your grown-up needs to say yes to a friend first. Then your room will open here."
@@ -66,16 +85,40 @@ export default function KidView() {
     )
   }
 
-  return <Room child={child} roomId={room._id} paused={room.status === 'paused'} />
+  return (
+    <Room
+      child={child}
+      roomId={room._id}
+      paused={room.status === 'paused'}
+      theme={theme}
+      onToggleTheme={toggleTheme}
+    />
+  )
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="kid-app">{children}</div>
+function Shell({ children, theme }: { children: React.ReactNode; theme: Theme }) {
+  return (
+    <div className="kid-app" data-theme={theme}>
+      {children}
+    </div>
+  )
 }
 
 type Child = NonNullable<ReturnType<typeof useQuery<typeof api.children.getByName>>>
 
-function Room({ child, roomId, paused }: { child: Child; roomId: Id<'rooms'>; paused: boolean }) {
+function Room({
+  child,
+  roomId,
+  paused,
+  theme,
+  onToggleTheme,
+}: {
+  child: Child
+  roomId: Id<'rooms'>
+  paused: boolean
+  theme: Theme
+  onToggleTheme: () => void
+}) {
   const messages = useQuery(api.messages.listByRoom, { roomId })
   const allChildren = useQuery(api.children.list)
   const sendSymbols = useMutation(api.messages.sendSymbols)
@@ -192,7 +235,7 @@ function Room({ child, roomId, paused }: { child: Child; roomId: Id<'rooms'>; pa
 
   if (!started) {
     return (
-      <Shell>
+      <Shell theme={theme}>
         <StartGate
           me={me}
           friend={friend}
@@ -207,7 +250,7 @@ function Room({ child, roomId, paused }: { child: Child; roomId: Id<'rooms'>; pa
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className={`kid-app show-${tab}`}>
+      <div className={`kid-app show-${tab}`} data-theme={theme}>
         <div className="shell">
           <Board
             me={me}
@@ -237,6 +280,8 @@ function Room({ child, roomId, paused }: { child: Child; roomId: Id<'rooms'>; pa
             soundOn={soundOn}
             paused={paused}
             canReplay={!!lastSpokenFromFriend}
+            theme={theme}
+            onToggleTheme={onToggleTheme}
             onToggleSound={() => setSoundOn((s) => !s)}
             onReplay={() => lastSpokenFromFriend?.audioUrl && audio.replay(lastSpokenFromFriend.audioUrl, lastSpokenFromFriend._id)}
             onBack={() => setTab('board')}
