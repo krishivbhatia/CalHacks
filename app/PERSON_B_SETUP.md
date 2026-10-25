@@ -141,8 +141,21 @@ without replacing that screen. Start Vite and open the page with `room` and
 `child` query parameters from `diagnostics:createSmokeRoom`. Enable audio on
 both clients before sending. Use only synthetic operator test records.
 
-Two browser clients successfully synchronized a real Claude draft. The test was
-interrupted before confirmation and receiver playback, so the two-browser
-playback/Pause check remains incomplete. Operator-only backend tests already
-verified live synthesis, audio retrieval and moderation. Optional parent intake
+Two browser clients completed the live flow on October 24, 2026:
+- Both received Claude drafts before confirmation; nothing played at draft time.
+- Maya confirmed; Leo's browser reached `playing`, then `ended`.
+- Leo confirmed a reply using Parker; Maya's browser reached `playing`.
+- Pause from Leo stopped Maya's active audio, changed both screens to paused,
+  and disabled Send/Replay. Resume re-enabled interaction.
+- A fresh draft was rejected; both clients showed `rejected` and the backend
+  confirmed that message had no audio storage ID.
+
+Testing caught a WebKit autoplay failure in the original media-element player.
+`src/audio/useVoicePlayback.ts` now unlocks an AudioContext on an explicit
+Enable audio click and plays decoded WAV buffers through it. Pause cancels
+pending downloads/decodes and stops the active source. Person C can reuse this
+hook; the actual kid screen is still a placeholder, so this verifies the
+separate two-browser harness rather than C's finished UI. The two clients ran
+in the same in-app browser on one machine; physical two-device listening still
+needs a demo rehearsal. Optional parent intake
 is still scripted in D's UI; `ai.intakeTurn` has not been implemented.
